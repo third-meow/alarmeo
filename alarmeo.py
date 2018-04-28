@@ -27,6 +27,7 @@ class alarm():
                 ]
 
         self.track_num = 0
+        self.current_vol = 0
         
         #ask user for alarm time
         self.target_hour = self.og_target_hour = int(input('Hour: '))
@@ -42,6 +43,7 @@ class alarm():
         self.target_hour = self.og_target_hour
         self.target_min = self.og_target_hour
         self.track_num = 0
+        self.current_vol = 0
 
     def snooze(self):
         self.track_num += 1
@@ -55,17 +57,19 @@ class alarm():
 
     #turn down beats and take message
     def take_msg(self):
-        aiy.audio.get_recorder().start()
-        time.sleep(1)
+        #aiy.audio.get_recorder().start()
+        #time.sleep(1)
         self.playqq.kill()
-        self.text = self.recog.recognize()
+        #self.text = self.recog.recognize()
         
-        if 'i am lazy' in self.text:
-            self.snooze()
-        elif 'i am not lazy' in self.text:
-            self.off()
-        else:
-            self.sound_alarm()
+        self.off()
+
+        #if 'i am lazy' in self.text:
+        #    self.snooze()
+        #elif 'i am not lazy' in self.text:
+        #    self.off()
+        #else:
+        #    self.sound_alarm()
 
     #sound the alarm
     def sound_alarm(self):
@@ -76,16 +80,25 @@ class alarm():
         self.playqq = subprocess.Popen(['aplay', self.get_track_path()])
         
         #slowly increase the volume to 90 percent
-        for self.current_vol in range(4, 91, 2):
-            #wait 3 secs
-            time.sleep(3)
+        for i in range(0, 10000):
+
+            print(i)
+            #wait 30 milli-secs
+            time.sleep(0.03)
             
-            #if button is pushed, break
+            #if button is pushed
             if GPIO.input(self.button_pin) == False:
-                self.playqq.kill()
-                quit()
-            #increase volume
-            subprocess.Popen(['amixer', 'sset', 'Master', str(self.current_vol)+'%'])
+                self.take_msg()
+
+            if (i % 500 == 0) and (self.current_vol <= 85):
+                #increase volume
+                self.current_vol = i / 100
+                subprocess.Popen(['amixer', 'sset', 'Master', str(self.current_vol)+'%'])
+        
+        while GPIO.input(self.button_pin):
+            pass
+        self.take_msg()
+
 
     def main(self):
         while True:
